@@ -17,7 +17,7 @@ module.exports = {
     try {
       const posts = await PostModel.find({ archived: false })
         .select(" -updatedAt")
-        .populate("userId", "username")
+        .populate("userId", "username avatar")
         .sort({ createdAt: -1 }); // Obratni vrstni red (najprej najnovejši)
 
       res.json(posts);
@@ -35,7 +35,7 @@ module.exports = {
 
     try {
       const post = await PostModel.findOne({ _id: id })
-        .populate("userId", "username") // Populacija za prikaz avtorja
+        .populate("userId", "username avatar") // Populacija za prikaz avtorja
         .populate({
           path: "comments",
           populate: { path: "userId", select: "username" }, // Populacija uporabnikov v komentarjih

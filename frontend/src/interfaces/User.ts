@@ -7,4 +7,5 @@ export interface User {
   name: string;
   createdAt: string;
   bio?: string
+  avatar: string
 }

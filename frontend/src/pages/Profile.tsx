@@ -10,6 +10,7 @@ import {
     Tab,
     TabPanel,
     VStack,
+    Image,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import { useNavigate } from 'react-router-dom';
@@ -62,6 +63,19 @@ const Profile: React.FC = () => {
         <TabPanels>
           <TabPanel>
             <VStack spacing={4} align="stretch">
+                <Box textAlign="center">
+                    <Text fontSize="lg" fontWeight="bold">
+                        Avatar:
+                    </Text>
+                    <Image
+                        src={user.avatar}
+                        alt="User Avatar"
+                        boxSize="200px"
+                        borderRadius="full"
+                        mx="auto"
+                        border="2px solid teal"
+                    />
+                </Box>
               <Box>
                 <Text fontSize="lg" fontWeight="bold">
                   Ime:

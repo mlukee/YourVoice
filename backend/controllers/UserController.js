@@ -152,7 +152,7 @@ module.exports = {
    */
   update: async function (req, res) {
     const { id } = req.params; // ID iz URL-ja
-    const { username, email, password, bio } = req.body;
+    const { username, email, password, bio, avatar } = req.body;
 
     try {
       // Poiščemo uporabnika po ID-ju
@@ -168,6 +168,7 @@ module.exports = {
       if (username) updates.username = username;
       if (email) updates.email = email;
       if (bio) updates.bio = bio;
+      if (avatar) updates.avatar = avatar;
 
       if (password) {
         const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;

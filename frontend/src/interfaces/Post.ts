@@ -7,6 +7,7 @@ export interface Post {
   userId: {
     _id: string;
     username: string;
+    avatar?: string
   };
   upvotes: number;
   downvotes: number;

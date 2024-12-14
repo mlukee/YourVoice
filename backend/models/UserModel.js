@@ -16,7 +16,7 @@ var UserSchema = new Schema({
 	},
     role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
     bio: { type: String, default: '', },
-	avatar: { type: String, default: ''},
+	avatar: { type: String, default: '/avatars/bear.png'},
     isBanned: { type: Boolean, default: false },
 	createdAt: { type: Date, default: Date.now }
 });

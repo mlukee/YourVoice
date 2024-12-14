@@ -8,7 +8,7 @@ import {
   Spinner,
   useDisclosure,
   useToast,
-  Image,
+    Image,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import AddPostModal from '../components/AddPostModal';
@@ -87,6 +87,7 @@ const Posts: React.FC = () => {
     }
   };
 
+
   return (
     <Box p={6} maxW="container.lg" mx="auto">
       <Heading as="h2" size="xl" mb={6} textAlign="center">
@@ -136,9 +137,19 @@ const Posts: React.FC = () => {
               {/* <Text mt={2} fontSize="md" color="gray.600">
                 Kategorija: {post.category}
               </Text> */}
-              <Text mt={2} fontSize="sm" color="gray.500">
-                Avtor: {post?.userId?.username || 'Neznan uporabnik'}
-              </Text>
+              <Box display="flex" alignItems="center" mt={2}>
+                {/* Prikaz slike */}
+                <Image
+                    src={post?.userId?.avatar || '/avatars/hacker.png'}
+                    boxSize="100px"
+                    borderRadius="full"
+                    mr={2} // Razmik desno
+                />
+                {/* Prikaz avtorjevega imena */}
+                <Text fontSize="sm" color="gray.500">
+                  Avtor: {post?.userId?.username || 'Neznan uporabnik'}
+                </Text>
+              </Box>
               <Link to={`/posts/${post._id}`}>
                 <Button colorScheme="teal" mt={4}>
                   Preberi več
