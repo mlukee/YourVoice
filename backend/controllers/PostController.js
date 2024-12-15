@@ -15,10 +15,52 @@ var upload = multer({ storage: storage });
 module.exports = {
   list: async function (req, res) {
     try {
-      const posts = await PostModel.find({ archived: false })
-        .select(" -updatedAt")
-        .populate("userId", "username avatar")
-        .sort({ createdAt: -1 }); // Obratni vrstni red (najprej najnovejši)
+      const posts = await PostModel.aggregate([
+        {
+          $match: { archived: false },
+        },
+        {
+          $addFields: {
+            ratio: {
+              $cond: {
+                if: { $eq: ["$downvotes", 0] },
+                then: "$upvotes",
+                else: { $divide: ["$upvotes", "$downvotes"] },
+              },
+            },
+          },
+        },
+        {
+          $sort: { ratio: -1, createdAt: -1 }, // Sortiranje po razmerju in datumu
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "userId",
+          },
+        },
+        {
+          $unwind: "$userId",
+        },
+        {
+          $project: {
+            title: 1,
+            content: 1,
+            category: 1,
+            userId: { username: 1, avatar: 1 },
+            upvotes: 1,
+            downvotes: 1,
+            comments: 1,
+            image: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            archived: 1,
+            ratio: 1,
+          },
+        },
+      ]);
 
       res.json(posts);
     } catch (err) {
@@ -28,7 +70,6 @@ module.exports = {
       });
     }
   },
-
   // Posodobljena metoda za prikaz posamezne objave
   show: async function (req, res) {
     const id = req.params.id;
@@ -276,6 +317,218 @@ module.exports = {
     } catch (err) {
       return res.status(500).json({
         message: "Error when deleting comment or updating post",
+        error: err.message,
+      });
+    }
+  },
+
+  upvote: async function (req, res) {
+    const postId = req.params.id;
+    const userId = req.body.userId;
+
+    try {
+      const post = await PostModel.findById(postId);
+
+      if (!post) {
+        return res.status(404).json({
+          message: "No such post",
+        });
+      }
+
+      if (post.upvotedBy.includes(userId)) {
+        return res.status(400).json({
+          message: "User has already upvoted this post",
+        });
+      }
+
+      if (post.downvotedBy.includes(userId)) {
+        post.downvotes -= 1;
+        post.downvotedBy.pull(userId);
+      }
+
+      post.upvotes += 1;
+      post.upvotedBy.push(userId);
+
+      await post.save();
+
+      return res.json(post);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when upvoting post.",
+        error: err.message,
+      });
+    }
+  },
+
+  downvote: async function (req, res) {
+    const postId = req.params.id;
+    const userId = req.body.userId;
+
+    try {
+      const post = await PostModel.findById(postId);
+
+      if (!post) {
+        return res.status(404).json({
+          message: "No such post",
+        });
+      }
+
+      if (post.downvotedBy.includes(userId)) {
+        return res.status(400).json({
+          message: "User has already downvoted this post",
+        });
+      }
+
+      if (post.upvotedBy.includes(userId)) {
+        post.upvotes -= 1;
+        post.upvotedBy.pull(userId);
+      }
+
+      post.downvotes += 1;
+      post.downvotedBy.push(userId);
+
+      await post.save();
+
+      return res.json(post);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when downvoting post.",
+        error: err.message,
+      });
+    }
+  },
+
+  upvoteComment: async function (req, res) {
+    const commentId = req.params.commentId;
+    const userId = req.body.userId;
+
+    try {
+      const comment = await CommentModel.findById(commentId);
+
+      if (!comment) {
+        return res.status(404).json({
+          message: "No such comment",
+        });
+      }
+
+      if (comment.upvotedBy.includes(userId)) {
+        return res.status(400).json({
+          message: "User has already upvoted this comment",
+        });
+      }
+
+      if (comment.downvotedBy.includes(userId)) {
+        comment.downvotes -= 1;
+        comment.downvotedBy.pull(userId);
+      }
+
+      comment.upvotes += 1;
+      comment.upvotedBy.push(userId);
+
+      await comment.save();
+
+      return res.json(comment);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when upvoting comment.",
+        error: err.message,
+      });
+    }
+  },
+
+  downvoteComment: async function (req, res) {
+    const commentId = req.params.commentId;
+    const userId = req.body.userId;
+
+    try {
+      const comment = await CommentModel.findById(commentId);
+
+      if (!comment) {
+        return res.status(404).json({
+          message: "No such comment",
+        });
+      }
+
+      if (comment.downvotedBy.includes(userId)) {
+        return res.status(400).json({
+          message: "User has already downvoted this comment",
+        });
+      }
+
+      if (comment.upvotedBy.includes(userId)) {
+        comment.upvotes -= 1;
+        comment.upvotedBy.pull(userId);
+      }
+
+      comment.downvotes += 1;
+      comment.downvotedBy.push(userId);
+
+      await comment.save();
+
+      return res.json(comment);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when downvoting comment.",
+        error: err.message,
+      });
+    }
+  },
+
+  getComments: async function (req, res) {
+    const postId = req.params.id;
+
+    try {
+      const post = await PostModel.findById(postId).populate({
+        path: "comments",
+        populate: { path: "userId", select: "username" },
+      });
+
+      if (!post) {
+        return res.status(404).json({
+          message: "No such post",
+        });
+      }
+
+      const comments = await CommentModel.aggregate([
+        { $match: { _id: { $in: post.comments } } },
+        {
+          $addFields: {
+            ratio: {
+              $cond: {
+                if: { $eq: ["$downvotes", 0] },
+                then: "$upvotes",
+                else: { $divide: ["$upvotes", "$downvotes"] },
+              },
+            },
+          },
+        },
+        { $sort: { ratio: -1, createdAt: -1 } }, // Sortiranje po razmerju in datumu
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "userId",
+          },
+        },
+        { $unwind: "$userId" },
+        {
+          $project: {
+            content: 1,
+            userId: { username: 1 },
+            upvotes: 1,
+            downvotes: 1,
+            image: 1,
+            createdAt: 1,
+            ratio: 1,
+          },
+        },
+      ]);
+
+      res.json(comments);
+    } catch (err) {
+      res.status(500).json({
+        message: "Error when getting comments.",
         error: err.message,
       });
     }

@@ -27,9 +27,12 @@ import {
   useToast,
   Image,
   Input,
+  IconButton,
+  HStack,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import { PlusIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon } from '@chakra-ui/icons';
 
 interface User {
   username: string;
@@ -41,6 +44,10 @@ interface Comment {
   content: string;
   createdAt: string;
   userId: User;
+  upvotes: number;
+  downvotes: number;
+  upvotedBy?: string[];
+  downvotedBy?: string[];
   image?: string; // Add the image property
 }
 
@@ -64,6 +71,7 @@ const PostDetail: React.FC = () => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const toast = useToast();
+  const [comments, setComments] = useState<Comment[]>([]);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { isOpen: isImageOpen, onOpen: onImageOpen, onClose: onImageClose } = useDisclosure();
@@ -71,23 +79,28 @@ const PostDetail: React.FC = () => {
   // Ustvarite ref za textarea
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const fetchPost = useCallback(() => {
+  const fetchPost = useCallback(async () => {
     setLoading(true);
-    fetch(`http://localhost:3000/post/${id}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setPost(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Napaka pri pridobivanju objave:', error);
-        setLoading(false);
-      });
+    try {
+      const response = await fetch(`http://localhost:3000/post/${id}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setPost(data);
+  
+      // Fetch sorted comments
+      const commentsResponse = await fetch(`http://localhost:3000/post/${id}/comments`);
+      if (!commentsResponse.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const commentsData = await commentsResponse.json();
+      setComments(commentsData);
+    } catch (error) {
+      console.error('Napaka pri pridobivanju objave:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -95,7 +108,6 @@ const PostDetail: React.FC = () => {
   }, [fetchPost]);
 
   const handleCommentSubmit = async () => {
-    // Check if the comment is empty
     if (newComment.trim() === '') {
       toast({
         title: 'Komentar ne more biti prazen.',
@@ -139,6 +151,72 @@ const PostDetail: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Napaka pri dodajanju komentarja',
+        status: 'error',
+      });
+      console.error(error);
+    }
+  };
+
+  const handleCommentUpvote = async (commentId: string) => {
+    if (!user) {
+      toast({
+        title: 'Napaka: Uporabnik ni prijavljen.',
+        status: 'error',
+      });
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:3000/post/${id}/comment/${commentId}/upvote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user._id }), 
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Napaka pri glasovanju');
+      }
+  
+      fetchPost();
+    } catch (error) {
+      toast({
+        title: 'Napaka pri glasovanju',
+        status: 'error',
+      });
+      console.error(error);
+    }
+  };
+  
+  const handleCommentDownvote = async (commentId: string) => {
+    if (!user) {
+      toast({
+        title: 'Napaka: Uporabnik ni prijavljen.',
+        status: 'error',
+      });
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:3000/post/${id}/comment/${commentId}/downvote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user._id }), 
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Napaka pri glasovanju');
+      }
+  
+      fetchPost();
+    } catch (error) {
+      toast({
+        title: 'Napaka pri glasovanju',
         status: 'error',
       });
       console.error(error);
@@ -259,55 +337,67 @@ const PostDetail: React.FC = () => {
             </Button>
           </div>
 
-          {post.comments && post.comments.length > 0 ? (
+          {comments.length > 0 ? (
             <VStack spacing={4} align="start">
-              {post.comments
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
-                )
-                .map((comment) => (
-                  <Box
-                    key={comment._id}
-                    p={4}
-                    borderWidth="1px"
-                    borderRadius="md"
-                    w="full"
-                  >
-                    <Text fontSize="sm" color="gray.500">
-                      {comment.userId.username} -{' '}
-                      {new Date(comment.createdAt).toLocaleString()}
-                    </Text>
-                    {/* Display comment image if it exists */}
-                    {comment.image && (
-                      <Flex justifyContent="center" alignItems="center">
-                        <Image
-                          src={`data:image/jpeg;base64,${comment.image}`}
-                          alt="Comment Image"
-                          mt={4}
-                          mb={4}
-                          borderRadius="md"
-                          boxSize="150px"
-                          cursor="pointer"
-                          onClick={() => handleImageClick(comment.image!)}
-                        />
-                      </Flex>
-                    )}
-                    <Text>{comment.content}</Text>
-                    {(user?._id === comment.userId._id ||
-                      user?._id === post.userId?._id) && (
-                      <Button
-                        colorScheme="red"
-                        size="sm"
-                        mt={2}
-                        onClick={() => handleCommentDelete(comment._id)}
-                      >
-                        Izbriši
-                      </Button>
-                    )}
-                  </Box>
-                ))}
+              {comments.map((comment) => (
+                <Box
+                  key={comment._id}
+                  p={4}
+                  borderWidth="1px"
+                  borderRadius="md"
+                  w="full"
+                >
+                  <Text fontSize="sm" color="gray.500">
+                    {comment.userId.username} -{' '}
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </Text>
+                  {/* Display comment image if it exists */}
+                  {comment.image && (
+                    <Flex justifyContent="center" alignItems="center">
+                      <Image
+                        src={`data:image/jpeg;base64,${comment.image}`}
+                        alt="Comment Image"
+                        mt={4}
+                        mb={4}
+                        borderRadius="md"
+                        boxSize="150px"
+                        cursor="pointer"
+                        onClick={() => handleImageClick(comment.image!)}
+                      />
+                    </Flex>
+                  )}
+                  <Text>{comment.content}</Text>
+                  <HStack>
+                    <IconButton
+                      aria-label="Upvote"
+                      icon={<ArrowUpIcon />}
+                      onClick={() => handleCommentUpvote(comment._id)}
+                      colorScheme={comment.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'}
+                      size="sm"
+                    />
+                    <Text>{comment.upvotes}</Text>
+                    <IconButton
+                      aria-label="Downvote"
+                      icon={<ArrowDownIcon />}
+                      onClick={() => handleCommentDownvote(comment._id)}
+                      colorScheme={comment.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'}
+                      size="sm"
+                    />
+                    <Text>{comment.downvotes}</Text>
+                  </HStack>
+                  {(user?._id === comment.userId._id ||
+                    user?._id === post.userId?._id) && (
+                    <Button
+                      colorScheme="red"
+                      size="sm"
+                      mt={2}
+                      onClick={() => handleCommentDelete(comment._id)}
+                    >
+                      Izbriši
+                    </Button>
+                  )}
+                </Box>
+              ))}
             </VStack>
           ) : (
             <Text color="gray.500">

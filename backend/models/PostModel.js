@@ -12,6 +12,8 @@ var PostSchema = new Schema({
   },
   upvotes: { type: Number, default: 0 },
   downvotes: { type: Number, default: 0 },
+  upvotedBy: [{ type: Schema.Types.ObjectId, ref: "users" }], 
+  downvotedBy: [{ type: Schema.Types.ObjectId, ref: "users" }],
   comments: [
     {
       type: Schema.Types.ObjectId,

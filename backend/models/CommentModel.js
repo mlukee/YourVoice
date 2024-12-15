@@ -8,6 +8,10 @@ var CommentSchema = new Schema({
         ref: 'users', 
         required: true },
     image: { type: String },
+    upvotes: { type: Number, default: 0 },
+    downvotes: { type: Number, default: 0 },
+    upvotedBy: [{ type: Schema.Types.ObjectId, ref: 'users' }], 
+    downvotedBy: [{ type: Schema.Types.ObjectId, ref: 'users' }],
     createdAt: { type: Date, default: Date.now }
 });
 

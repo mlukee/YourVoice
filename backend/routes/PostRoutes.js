@@ -26,5 +26,11 @@ router.delete("/:id/delete", PostController.remove);
 
 router.post("/:id/comment", PostController.addComment);
 router.delete("/:id/comment/:commentId", PostController.removeComment);
+router.post("/:id/comment/:commentId/upvote", PostController.upvoteComment);
+router.post("/:id/comment/:commentId/downvote", PostController.downvoteComment);
+router.get("/:id/comments", PostController.getComments);
+
+router.post("/:id/upvote", PostController.upvote);
+router.post("/:id/downvote", PostController.downvote);
 
 module.exports = router;

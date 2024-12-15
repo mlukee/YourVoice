@@ -8,8 +8,11 @@ import {
   Spinner,
   useDisclosure,
   useToast,
-    Image,
+  Image,
+  IconButton,
+  HStack,
 } from '@chakra-ui/react';
+import { ArrowUpIcon, ArrowDownIcon } from '@chakra-ui/icons';
 import { UserContext } from '../userContext';
 import AddPostModal from '../components/AddPostModal';
 import { Post } from '../interfaces/Post';
@@ -42,6 +45,73 @@ const Posts: React.FC = () => {
       setLoading(false); // Poskrbi, da se `setLoading` vedno pokliče
     }
   };
+
+  const handleUpvote = async (postId: string) => {
+    if (!user) {
+      toast({
+        title: 'Napaka: Uporabnik ni prijavljen.',
+        status: 'error',
+      });
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:3000/post/${postId}/upvote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Napaka pri glasovanju');
+      }
+  
+      loadPosts();
+    } catch (error) {
+      toast({
+        title: 'Napaka pri glasovanju',
+        status: 'error',
+      });
+      console.error(error);
+    }
+  };
+  
+  const handleDownvote = async (postId: string) => {
+    if (!user) {
+      toast({
+        title: 'Napaka: Uporabnik ni prijavljen.',
+        status: 'error',
+      });
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:3000/post/${postId}/downvote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Napaka pri glasovanju');
+      }
+  
+      loadPosts();
+    } catch (error) {
+      toast({
+        title: 'Napaka pri glasovanju',
+        status: 'error',
+      });
+      console.error(error);
+    }
+  };
+  
 
   const getCategories = (categories: string): string[] => {
     return categories.split(',').map((category) => category.trim());
@@ -87,7 +157,6 @@ const Posts: React.FC = () => {
     }
   };
 
-
   return (
     <Box p={6} maxW="container.lg" mx="auto">
       <Heading as="h2" size="xl" mb={6} textAlign="center">
@@ -115,9 +184,33 @@ const Posts: React.FC = () => {
               borderRadius="lg"
               _hover={{ bg: 'gray.50' }}
             >
-              <Heading fontSize="xl">{post.title}</Heading>
-                {/* Display image if it exists */}
-                {post.image && (
+              <Box display="flex" alignItems="center">
+                <Box display="flex" flexDirection="column" alignItems="center" mr={4}>
+                  <HStack>
+                    <IconButton
+                      aria-label="Upvote"
+                      icon={<ArrowUpIcon />}
+                      onClick={() => handleUpvote(post._id)}
+                      colorScheme={post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'}
+                      size = "50px"
+                    />
+                    <Text>{post.upvotes}</Text>
+                  </HStack>
+                  <HStack>
+                    <IconButton
+                      aria-label="Downvote"
+                      icon={<ArrowDownIcon />}
+                      onClick={() => handleDownvote(post._id)}
+                      colorScheme={post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'}
+                      size = "50px"
+                    />
+                    <Text>{post.downvotes}</Text>
+                  </HStack>
+                </Box>
+                <Heading fontSize="xl">{post.title}</Heading>
+              </Box>
+              {/* Display image if it exists */}
+              {post.image && (
                 <Image
                   src={`data:image/jpeg;base64,${post.image}`}
                   alt={post.title}
@@ -134,18 +227,7 @@ const Posts: React.FC = () => {
                   </span>
                 ))}
               </div>
-              {/* <Text mt={2} fontSize="md" color="gray.600">
-                Kategorija: {post.category}
-              </Text> */}
               <Box display="flex" alignItems="center" mt={2}>
-                {/* Prikaz slike */}
-                <Image
-                    src={post?.userId?.avatar || '/avatars/hacker.png'}
-                    boxSize="100px"
-                    borderRadius="full"
-                    mr={2} // Razmik desno
-                />
-                {/* Prikaz avtorjevega imena */}
                 <Text fontSize="sm" color="gray.500">
                   Avtor: {post?.userId?.username || 'Neznan uporabnik'}
                 </Text>

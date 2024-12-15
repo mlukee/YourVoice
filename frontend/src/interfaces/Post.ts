@@ -11,6 +11,8 @@ export interface Post {
   };
   upvotes: number;
   downvotes: number;
+  upvotedBy: string[]; 
+  downvotedBy: string[]; 
   comments?: {
     _id: string;
     content: string;
