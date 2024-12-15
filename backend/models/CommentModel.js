@@ -7,6 +7,7 @@ var CommentSchema = new Schema({
         type: Schema.Types.ObjectId, 
         ref: 'users', 
         required: true },
+    image: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
 

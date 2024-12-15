@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
       <footer className="footer d-flex flex-wrap justify-content-between align-items-start py-3 my-4 border-top">
         <div className="col-md-6 d-flex flex-column align-items-start">
           <span className="footer-text mb-1">
-            v0.0.1 Beta © 2024 by Oset, Ternik, Vučetić
+            v1.0.0 Alpha © 2024 by Paurič, Lukežič, Tikvič
           </span>
           <span className="footer-text">
             Projekt Your Voice, Fakulteta za elektrotehniko, računalništvo in

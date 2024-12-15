@@ -190,47 +190,57 @@ module.exports = {
     }
   },
 
-  addComment: async function (req, res) {
-    const postId = req.params.id;
+  addComment: [
+    upload.single("image"), 
+    async function (req, res) {
+      const postId = req.params.id;
 
-    if (!req.body.content || !req.body.userId) {
-      return res.status(400).json({
-        message: "Content and userId are required",
-      });
-    }
-
-    try {
-      // Ustvari in shrani nov komentar
-      const newComment = new CommentModel({
-        content: req.body.content,
-        userId: req.body.userId,
-      });
-      const comment = await newComment.save();
-
-      // Dodaj ID komentarja v objavo
-      const post = await PostModel.findByIdAndUpdate(
-        postId,
-        { $push: { comments: comment._id } },
-        { new: true }
-      ).populate({
-        path: "comments",
-        populate: { path: "userId", select: "username" }, // Populiramo tudi uporabnika komentarja
-      });
-
-      if (!post) {
-        return res.status(404).json({
-          message: "No such Post to add a comment",
+      if (!req.body.content || !req.body.userId) {
+        return res.status(400).json({
+          message: "Content and userId are required",
         });
       }
 
-      return res.status(201).json(post);
-    } catch (err) {
-      return res.status(500).json({
-        message: "Error when creating comment or updating post",
-        error: err.message,
-      });
-    }
-  },
+      try {
+        let image = null;
+
+        if (req.file) {
+          image = req.file.buffer.toString("base64"); 
+        }
+
+        // Ustvari in shrani nov komentar
+        const newComment = new CommentModel({
+          content: req.body.content,
+          userId: req.body.userId,
+          image: image, 
+        });
+        const comment = await newComment.save();
+
+        // Dodaj ID komentarja v objavo
+        const post = await PostModel.findByIdAndUpdate(
+          postId,
+          { $push: { comments: comment._id } },
+          { new: true }
+        ).populate({
+          path: "comments",
+          populate: { path: "userId", select: "username" }, // Populiramo tudi uporabnika komentarja
+        });
+
+        if (!post) {
+          return res.status(404).json({
+            message: "No such Post to add a comment",
+          });
+        }
+
+        res.status(201).json(post);
+      } catch (err) {
+        res.status(500).json({
+          message: "Error when adding comment",
+          error: err.message,
+        });
+      }
+    },
+  ],
 
   removeComment: async function (req, res) {
     const postId = req.params.id;

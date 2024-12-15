@@ -26,6 +26,7 @@ import {
   useDisclosure,
   useToast,
   Image,
+  Input,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import { PlusIcon } from 'lucide-react';
@@ -40,6 +41,7 @@ interface Comment {
   content: string;
   createdAt: string;
   userId: User;
+  image?: string; // Add the image property
 }
 
 interface Post {
@@ -57,10 +59,14 @@ const PostDetail: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [commentImage, setCommentImage] = useState<File | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const toast = useToast();
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { isOpen: isImageOpen, onOpen: onImageOpen, onClose: onImageClose } = useDisclosure();
 
   // Ustvarite ref za textarea
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -103,25 +109,25 @@ const PostDetail: React.FC = () => {
       return;
     }
 
+    const formData = new FormData();
+    formData.append('content', newComment);
+    formData.append('userId', user._id);
+    if (commentImage) {
+      formData.append('image', commentImage);
+    }
+
     try {
       const response = await fetch(`http://localhost:3000/post/${id}/comment`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: newComment,
-          userId: user._id,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
         throw new Error('Napaka pri dodajanju komentarja');
       }
 
-      // const data = await response.json();
-
       setNewComment('');
+      setCommentImage(null);
       onClose();
 
       fetchPost();
@@ -182,6 +188,17 @@ const PostDetail: React.FC = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCommentImage(e.target.files[0]);
+    }
+  };
+
+  const handleImageClick = (image: string) => {
+    setSelectedImage(image);
+    onImageOpen();
+  };
+
   return (
     <Box
       p={8}
@@ -217,14 +234,16 @@ const PostDetail: React.FC = () => {
           {/* Display image if it exists */}
           {post.image && (
             <Flex justifyContent="center" alignItems="center">
-            <Image
-              src={`data:image/jpeg;base64,${post.image}`}
-              alt={post.title}
-              mt={4}
-              mb={4}
-              borderRadius="md"
-            />
-          </Flex>
+              <Image
+                src={`data:image/jpeg;base64,${post.image}`}
+                alt={post.title}
+                mt={4}
+                mb={4}
+                borderRadius="md"
+                cursor="pointer"
+                onClick={() => handleImageClick(post.image!)}
+              />
+            </Flex>
           )}
           <Text fontSize="md" lineHeight="tall" mt={4} color="gray.700">
             {post.content}
@@ -260,7 +279,21 @@ const PostDetail: React.FC = () => {
                       {comment.userId.username} -{' '}
                       {new Date(comment.createdAt).toLocaleString()}
                     </Text>
-
+                    {/* Display comment image if it exists */}
+                    {comment.image && (
+                      <Flex justifyContent="center" alignItems="center">
+                        <Image
+                          src={`data:image/jpeg;base64,${comment.image}`}
+                          alt="Comment Image"
+                          mt={4}
+                          mb={4}
+                          borderRadius="md"
+                          boxSize="150px"
+                          cursor="pointer"
+                          onClick={() => handleImageClick(comment.image!)}
+                        />
+                      </Flex>
+                    )}
                     <Text>{comment.content}</Text>
                     {(user?._id === comment.userId._id ||
                       user?._id === post.userId?._id) && (
@@ -282,6 +315,23 @@ const PostDetail: React.FC = () => {
             </Text>
           )}
 
+          <Modal isOpen={isImageOpen} onClose={onImageClose} size="xl">
+            <ModalOverlay />
+            <ModalContent>
+              <ModalCloseButton />
+              <ModalBody>
+                {selectedImage && (
+                  <Image
+                    src={`data:image/jpeg;base64,${selectedImage}`}
+                    alt="Selected Image"
+                    borderRadius="md"
+                    width="100%"
+                  />
+                )}
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+
           <Modal
             isOpen={isOpen}
             onClose={onClose}
@@ -297,6 +347,12 @@ const PostDetail: React.FC = () => {
                   placeholder="Vnesite svoj komentar..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  mt={4}
                 />
               </ModalBody>
               <ModalFooter>

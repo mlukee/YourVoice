@@ -14,6 +14,7 @@ export interface Post {
   comments?: {
     _id: string;
     content: string;
+    image?: string;
     createdAt: string;
     userId: {
       _id: string;
