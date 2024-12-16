@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect} from 'react';
 import {
     Box,
     Heading,
@@ -34,7 +34,7 @@ const Profile: React.FC = () => {
         };
 
         fetchUser();
-    }, [user?._id]);
+    }, [user?._id, setUserContext]);
 
   if (!user) {
     return (

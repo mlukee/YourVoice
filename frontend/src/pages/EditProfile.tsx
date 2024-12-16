@@ -7,7 +7,7 @@ import {
     Input,
     Button,
     Stack,
-    useToast, Textarea, RadioGroup, HStack, Radio, Image,
+    useToast, Textarea, HStack, Image,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import { useNavigate } from 'react-router-dom';
@@ -44,8 +44,6 @@ const EditProfile: React.FC = () => {
             if (!response.ok) {
                 throw new Error('Prišlo je do napake pri posodabljanju profila.');
             }
-
-            const updatedUser = await response.json();
 
             // Obvestilo o uspehu
             toast({
