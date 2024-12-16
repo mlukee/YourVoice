@@ -228,7 +228,13 @@ const Posts: React.FC = () => {
                 ))}
               </div>
               <Box display="flex" alignItems="center" mt={2}>
-                <Text fontSize="sm" color="gray.500">
+                <Image
+                    src={post?.userId?.avatar || '/avatars/hacker.png'}
+                    boxSize="40px"
+                    borderRadius="full"
+                    mr={2} // Razmik desno med sliko in tekstom
+                />
+                <Text fontSize="sm" color="gray.500" lineHeight="40px">
                   Avtor: {post?.userId?.username || 'Neznan uporabnik'}
                 </Text>
               </Box>
