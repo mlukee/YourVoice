@@ -49,7 +49,7 @@ module.exports = {
             title: 1,
             content: 1,
             category: 1,
-            userId: { username: 1, avatar: 1 },
+            userId: { username: 1, avatar: 1, _id: 1 },
             upvotes: 1,
             downvotes: 1,
             comments: 1,
