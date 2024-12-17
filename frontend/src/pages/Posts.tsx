@@ -228,7 +228,13 @@ const Posts: React.FC = () => {
                 ))}
               </div>
               <Box display="flex" alignItems="center" mt={2}>
-                <Text fontSize="sm" color="gray.500">
+                <Image
+                    src={post?.userId?.avatar || '/avatars/hacker.png'}
+                    boxSize="40px"
+                    borderRadius="full"
+                    mr={2} // Razmik desno med sliko in tekstom
+                />
+                <Text fontSize="sm" color="gray.500" lineHeight="40px">
                   Avtor: {post?.userId?.username || 'Neznan uporabnik'}
                 </Text>
               </Box>
@@ -238,7 +244,7 @@ const Posts: React.FC = () => {
                 </Button>
               </Link>
               <div className="d-flex justify-content-between">
-                {user && post.userId && post.userId._id === user._id && (
+                {user && post.userId && (post.userId._id === user._id || user.role === 'admin') && (
                   <div className="d-flex align-items-center">
                     <Button
                       colorScheme="green"
@@ -249,7 +255,7 @@ const Posts: React.FC = () => {
                     </Button>
                     <Button
                       colorScheme="red"
-                      onClick={() => handleArchivePost(post._id)} // Delete post
+                      onClick={() => handleArchivePost(post._id)} // Archive post
                     >
                       Arhiviraj
                     </Button>
