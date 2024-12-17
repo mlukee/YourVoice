@@ -129,34 +129,49 @@ module.exports = {
   },
 ],
 
-  update: async function (req, res) {
-    const id = req.params.id;
+  update: [
+    upload.single("image"),
+    async function (req, res) {
+      const id = req.params.id;
 
-    try {
-      const updatedPost = await PostModel.findByIdAndUpdate(
-        id,
-        {
+      try {
+        let image = null;
+
+        if (req.file) {
+          image = req.file.buffer.toString("base64");
+        }
+
+        const updateData = {
           title: req.body.title,
           content: req.body.content,
           category: req.body.category,
-        },
-        { new: true } // Vrne posodobljen dokument
-      );
+        };
 
-      if (!updatedPost) {
-        return res.status(404).json({
-          message: "No such post",
+        if (image) {
+          updateData.image = image;
+        }
+
+        const updatedPost = await PostModel.findByIdAndUpdate(
+          id,
+          updateData,
+          { new: true } // Return the updated document
+        );
+
+        if (!updatedPost) {
+          return res.status(404).json({
+            message: "No such post",
+          });
+        }
+
+        return res.json(updatedPost);
+      } catch (err) {
+        return res.status(500).json({
+          message: "Error when updating post.",
+          error: err.message,
         });
       }
-
-      return res.json(updatedPost);
-    } catch (err) {
-      return res.status(500).json({
-        message: "Error when updating post.",
-        error: err.message,
-      });
-    }
-  },
+    },
+  ],
 
   remove: async function (req, res) {
     const id = req.params.id;
