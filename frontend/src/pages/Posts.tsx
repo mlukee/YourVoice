@@ -244,7 +244,7 @@ const Posts: React.FC = () => {
                 </Button>
               </Link>
               <div className="d-flex justify-content-between">
-                {user && post.userId && post.userId._id === user._id && (
+                {user && post.userId && (post.userId._id === user._id || user.role === 'admin') && (
                   <div className="d-flex align-items-center">
                     <Button
                       colorScheme="green"
@@ -255,7 +255,7 @@ const Posts: React.FC = () => {
                     </Button>
                     <Button
                       colorScheme="red"
-                      onClick={() => handleArchivePost(post._id)} // Delete post
+                      onClick={() => handleArchivePost(post._id)} // Archive post
                     >
                       Arhiviraj
                     </Button>

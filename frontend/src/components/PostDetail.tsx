@@ -386,7 +386,7 @@ const PostDetail: React.FC = () => {
                     <Text>{comment.downvotes}</Text>
                   </HStack>
                   {(user?._id === comment.userId._id ||
-                    user?._id === post.userId?._id) && (
+                    user?._id === post.userId?._id || user?.role === "admin") && (
                     <Button
                       colorScheme="red"
                       size="sm"
