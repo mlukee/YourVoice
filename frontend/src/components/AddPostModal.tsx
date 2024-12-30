@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext, useEffect, FC } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -16,11 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
 import { Post } from '../interfaces/Post';
-import {
-  MultiSelect,
-  MultiSelectProps,
-  useMultiSelect,
-} from 'chakra-multiselect';
+import { MultiSelect, Option } from 'chakra-multiselect';
 
 interface AddPostModalProps {
   isOpen: boolean;
@@ -29,25 +25,18 @@ interface AddPostModalProps {
   post: Post | null;
 }
 
-const StatefulMultiSelect: FC<
-  Omit<MultiSelectProps, 'onChange' | 'value'> &
-    Partial<Pick<MultiSelectProps, 'onChange' | 'value'>>
-> = ({ onChange: _onChange, value: _value, options: __options, ...props }) => {
-  const { value, options, onChange } = useMultiSelect({
-    value: _value ?? (props.single ? '' : []),
-    options: __options!,
-    onChange: _onChange,
-  });
-
-  return (
-    <MultiSelect
-      value={value}
-      options={options}
-      onChange={onChange}
-      {...props}
-    />
-  );
-};
+const predefinedOptions = [
+  { label: 'r/Reddit', value: 'r/reddit' },
+  { label: 'r/Cars', value: 'r/cars' },
+  { label: 'r/SLovenia', value: 'r/slovenia' },
+  { label: 'r/React', value: 'r/react' },
+  { label: 'r/JavaScript', value: 'r/javascript' },
+  { label: 'r/Programming', value: 'r/programming' },
+  { label: 'r/Python', value: 'r/python' },
+  { label: 'r/Java', value: 'r/java' },
+  { label: 'r/Node.js', value: 'r/node.js' },
+  { label: 'r/TypeScript', value: 'r/typescript' },
+];
 
 const AddPostModal: React.FC<AddPostModalProps> = ({
   isOpen,
@@ -56,37 +45,35 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
   post,
 }) => {
   const { user } = useContext(UserContext); // Get the currently logged-in user
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
-  const [options, setOptions] = useState<{ label: string; value: string }[]>(
-    []
-  );
+  const [title, setTitle] = useState<string>('');
+  const [content, setContent] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
+  const [options, setOptions] = useState<
+    { label: string; value: string | number }[]
+  >([]);
+  const [selectedCategories, setSelectedCategories] = useState<
+    { label: string; value: string | number }[]
+  >([]);
   const [image, setImage] = useState<File | null>(null);
+
   const toast = useToast();
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  const getCategories = (
+    categories: string
+  ): { label: string; value: string }[] => {
+    return categories.split(',').map((category) => ({
+      label: category.trim(),
+      value: category.trim().toLocaleLowerCase(),
+    }));
+  };
   useEffect(() => {
-    const getCategories = (
-      categories: string
-    ): { label: string; value: string }[] => {
-      return categories.split(',').map((category) => ({
-        label: category.trim(),
-        value: category.trim(),
-      }));
-    };
-
-    if (post) {
-      setTitle(post.title);
-      setContent(post.content);
-      setCategory(post.category);
-      setOptions(getCategories(post.category)); // Initialize options
-    } else {
-      setTitle('');
-      setContent('');
-      setCategory('');
-      setOptions([]);
-    }
+    const parsedCategories = post ? getCategories(post.category) : [];
+    setTitle(post?.title || '');
+    setContent(post?.content || '');
+    setCategory(post?.category || '');
+    setOptions(predefinedOptions.concat(parsedCategories));
+    setSelectedCategories(parsedCategories);
   }, [post]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,12 +89,14 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
     }
 
     let categoryOptionsString = '';
-    if (options.length > 0) {
-      categoryOptionsString = options.map((option) => option.value).join(', ');
-      setCategory(categoryOptionsString); // Update categoryOptionsString;
+    if (selectedCategories.length > 0) {
+      categoryOptionsString = selectedCategories
+        .map((option) => option.label)
+        .join(', ');
+      alert(categoryOptionsString);
+      setCategory(categoryOptionsString);
     }
 
-    // Preverjanje, če so vsi potrebni podatki prisotni
     if (!title || !content || !category) {
       toast({ title: 'Vsa polja morajo biti izpolnjena.', status: 'error' });
       return;
@@ -143,14 +132,13 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
         status: 'success',
       });
 
-      // Clear form fields
       setTitle('');
       setContent('');
       setCategory('');
       setOptions([]);
       setImage(null);
+      setSelectedCategories([]);
 
-      // Notify parent components
       if (onPostAdded) onPostAdded();
       if (onClose) onClose();
     } catch (error) {
@@ -162,11 +150,7 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      initialFocusRef={titleInputRef} // Set focus on the first input field
-    >
+    <Modal isOpen={isOpen} onClose={onClose} initialFocusRef={titleInputRef}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{post ? 'Uredi objavo' : 'Dodaj novo objavo'}</ModalHeader>
@@ -175,45 +159,65 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
           <FormControl mb={4}>
             <FormLabel>Naslov</FormLabel>
             <Input
-              ref={titleInputRef} // Ref for focus
+              ref={titleInputRef}
               placeholder="Vnesite naslov"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </FormControl>
           <FormControl mb={4}>
-            <FormLabel>Kategorija</FormLabel>
-            <Input
-              placeholder="Vnesite kategorijo"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            />
-            <StatefulMultiSelect
+            <FormLabel>Kategorije</FormLabel>
+            <MultiSelect
+              value={selectedCategories.length > 0 ? selectedCategories : []}
               options={options}
-              label="Choose or create multiple items"
               placeholder="Select or create ..."
               searchPlaceholder="Search or create ..."
               create
-              onChange={(newValue) => {
-                // Ensure newValue is always treated as an array
-                const selectedValues = Array.isArray(newValue)
-                  ? newValue
-                  : [newValue];
+              onChange={(
+                value: Option | Option[],
+                change?: { action: string; value: any }
+              ) => {
+                if (Array.isArray(value)) {
+                  switch (change?.action) {
+                    case 'multiCreate':
+                      setSelectedCategories((prevCategories) => [
+                        ...prevCategories,
+                        {
+                          label: change.value.label,
+                          value: change.value.value,
+                        },
+                      ]);
+                      break;
 
-                // Normalize values to ensure 'value' is a string
-                const normalizedValues = selectedValues.map((option) => ({
-                  label: option.label,
-                  value: String(option.value), // Force value to be a string
-                }));
+                    case 'multiSelect':
+                      setSelectedCategories((prevCategories) => [
+                        ...prevCategories,
+                        {
+                          label: change.value.label,
+                          value: change.value.value,
+                        },
+                      ]);
+                      break;
 
-                // Update the state
-                setOptions(normalizedValues);
+                    case 'multiRemove':
+                      setSelectedCategories(value);
+                      break;
+                    case 'multiClear':
+                      setSelectedCategories([]);
+                      break;
 
-                // Extract and join the values for the category
-                const selectedCategories = selectedValues
-                  .map((option) => option.value)
-                  .join(', ');
-                setCategory(selectedCategories);
+                    default:
+                      break;
+                  }
+
+                  const categoryOptionsString = value
+                    .map((option) => option.label)
+                    .join(', ');
+                  setCategory(categoryOptionsString);
+                } else {
+                  alert(value.value);
+                  setSelectedCategories([value]);
+                }
               }}
             />
           </FormControl>
