@@ -59,7 +59,9 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
-  const [options, setOptions] = useState<{ label: string; value: string }[]>([]);
+  const [options, setOptions] = useState<{ label: string; value: string }[]>(
+    []
+  );
   const [image, setImage] = useState<File | null>(null);
   const toast = useToast();
   const titleInputRef = useRef<HTMLInputElement>(null);

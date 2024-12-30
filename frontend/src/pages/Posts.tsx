@@ -9,6 +9,7 @@ import {
   useDisclosure,
   useToast,
   Image,
+  Input,
   IconButton,
   HStack,
 } from '@chakra-ui/react';
@@ -22,6 +23,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 
 const Posts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [originalPosts, setOriginalPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null); // Track selected post for editing
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -39,6 +41,7 @@ const Posts: React.FC = () => {
       }
       const data = await response.json();
       setPosts(data);
+      setOriginalPosts(data);
     } catch (error) {
       console.error('Napaka pri pridobivanju objav:', error);
     } finally {
@@ -54,21 +57,24 @@ const Posts: React.FC = () => {
       });
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://localhost:3000/post/${postId}/upvote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
-      });
-  
+      const response = await fetch(
+        `http://localhost:3000/post/${postId}/upvote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-  
+
       loadPosts();
     } catch (error) {
       toast({
@@ -78,7 +84,7 @@ const Posts: React.FC = () => {
       console.error(error);
     }
   };
-  
+
   const handleDownvote = async (postId: string) => {
     if (!user) {
       toast({
@@ -87,21 +93,24 @@ const Posts: React.FC = () => {
       });
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://localhost:3000/post/${postId}/downvote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
-      });
-  
+      const response = await fetch(
+        `http://localhost:3000/post/${postId}/downvote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-  
+
       loadPosts();
     } catch (error) {
       toast({
@@ -111,7 +120,6 @@ const Posts: React.FC = () => {
       console.error(error);
     }
   };
-  
 
   const getCategories = (categories: string): string[] => {
     return categories.split(',').map((category) => category.trim());
@@ -123,7 +131,30 @@ const Posts: React.FC = () => {
 
   const handlePostAdded = () => {
     loadPosts();
-    setSelectedPost(null); // Reset selected post after adding
+    setSelectedPost(null);
+  };
+
+  const filterPosts = (search: string) => {
+    if (search === '') {
+      setPosts(originalPosts);
+      return;
+    }
+
+    const normalizedSearch = search.toLowerCase();
+
+    const filteredPosts = posts.filter((post) => {
+      const titleMatches = post.title.toLowerCase().includes(normalizedSearch);
+      const categoryMatches = post.category
+        ? post.category.toLowerCase().includes(normalizedSearch)
+        : false;
+      const authorMatches = post.userId?.username
+        ? post.userId.username.toLowerCase().includes(normalizedSearch)
+        : false;
+
+      return titleMatches || categoryMatches || authorMatches;
+    });
+
+    setPosts(filteredPosts); // Update the state with filtered posts
   };
 
   const handleEditPost = (post: Post) => {
@@ -162,6 +193,11 @@ const Posts: React.FC = () => {
       <Heading as="h2" size="xl" mb={6} textAlign="center">
         Forum - Objave
       </Heading>
+      <Input
+        placeholder="Poišči objavo..."
+        onChange={(e) => filterPosts(e.target.value)}
+        mb={4}
+      />
       {user && (
         <Button onClick={onOpen} colorScheme="blue" mb={6}>
           Dodaj novo objavo
@@ -185,14 +221,21 @@ const Posts: React.FC = () => {
               _hover={{ bg: 'gray.50' }}
             >
               <Box display="flex" alignItems="center">
-                <Box display="flex" flexDirection="column" alignItems="center" mr={4}>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="center"
+                  mr={4}
+                >
                   <HStack>
                     <IconButton
                       aria-label="Upvote"
                       icon={<ArrowUpIcon />}
                       onClick={() => handleUpvote(post._id)}
-                      colorScheme={post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'}
-                      size = "50px"
+                      colorScheme={
+                        post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'
+                      }
+                      size="50px"
                     />
                     <Text>{post.upvotes}</Text>
                   </HStack>
@@ -201,8 +244,10 @@ const Posts: React.FC = () => {
                       aria-label="Downvote"
                       icon={<ArrowDownIcon />}
                       onClick={() => handleDownvote(post._id)}
-                      colorScheme={post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'}
-                      size = "50px"
+                      colorScheme={
+                        post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'
+                      }
+                      size="50px"
                     />
                     <Text>{post.downvotes}</Text>
                   </HStack>
@@ -229,10 +274,10 @@ const Posts: React.FC = () => {
               </div>
               <Box display="flex" alignItems="center" mt={2}>
                 <Image
-                    src={post?.userId?.avatar || '/avatars/hacker.png'}
-                    boxSize="40px"
-                    borderRadius="full"
-                    mr={2} // Razmik desno med sliko in tekstom
+                  src={post?.userId?.avatar || '/avatars/hacker.png'}
+                  boxSize="40px"
+                  borderRadius="full"
+                  mr={2} // Razmik desno med sliko in tekstom
                 />
                 <Text fontSize="sm" color="gray.500" lineHeight="40px">
                   Avtor: {post?.userId?.username || 'Neznan uporabnik'}
@@ -244,23 +289,25 @@ const Posts: React.FC = () => {
                 </Button>
               </Link>
               <div className="d-flex justify-content-between">
-                {user && post.userId && (post.userId._id === user._id || user.role === 'admin') && (
-                  <div className="d-flex align-items-center">
-                    <Button
-                      colorScheme="green"
-                      mr={3}
-                      onClick={() => handleEditPost(post)} // Edit post
-                    >
-                      Uredi
-                    </Button>
-                    <Button
-                      colorScheme="red"
-                      onClick={() => handleArchivePost(post._id)} // Archive post
-                    >
-                      Arhiviraj
-                    </Button>
-                  </div>
-                )}
+                {user &&
+                  post.userId &&
+                  (post.userId._id === user._id || user.role === 'admin') && (
+                    <div className="d-flex align-items-center">
+                      <Button
+                        colorScheme="green"
+                        mr={3}
+                        onClick={() => handleEditPost(post)} // Edit post
+                      >
+                        Uredi
+                      </Button>
+                      <Button
+                        colorScheme="red"
+                        onClick={() => handleArchivePost(post._id)} // Archive post
+                      >
+                        Arhiviraj
+                      </Button>
+                    </div>
+                  )}
                 <Text mt={4} fontSize="sm" color="gray.500">
                   Posted: {dayjs(post.createdAt).fromNow()}
                 </Text>
