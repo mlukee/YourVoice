@@ -93,7 +93,6 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
       categoryOptionsString = selectedCategories
         .map((option) => option.label)
         .join(', ');
-      alert(categoryOptionsString);
       setCategory(categoryOptionsString);
     }
 
@@ -188,7 +187,6 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
                         },
                       ]);
                       break;
-
                     case 'multiSelect':
                       setSelectedCategories((prevCategories) => [
                         ...prevCategories,
@@ -198,24 +196,20 @@ const AddPostModal: React.FC<AddPostModalProps> = ({
                         },
                       ]);
                       break;
-
                     case 'multiRemove':
                       setSelectedCategories(value);
                       break;
                     case 'multiClear':
                       setSelectedCategories([]);
                       break;
-
                     default:
                       break;
                   }
-
                   const categoryOptionsString = value
                     .map((option) => option.label)
                     .join(', ');
                   setCategory(categoryOptionsString);
                 } else {
-                  alert(value.value);
                   setSelectedCategories([value]);
                 }
               }}

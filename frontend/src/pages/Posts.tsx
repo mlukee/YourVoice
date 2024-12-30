@@ -154,7 +154,7 @@ const Posts: React.FC = () => {
       return titleMatches || categoryMatches || authorMatches;
     });
 
-    setPosts(filteredPosts); // Update the state with filtered posts
+    setPosts(filteredPosts);
   };
 
   const handleEditPost = (post: Post) => {
