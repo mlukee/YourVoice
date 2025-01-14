@@ -58,6 +58,7 @@ module.exports = {
             updatedAt: 1,
             archived: 1,
             ratio: 1,
+            reactions: 1,
           },
         },
       ]);
@@ -544,6 +545,68 @@ module.exports = {
     } catch (err) {
       res.status(500).json({
         message: "Error when getting comments.",
+        error: err.message,
+      });
+    }
+  },
+
+  addReaction: async function (req, res) {
+    const postId = req.params.id;
+    const { userId, reaction } = req.body;
+
+    try {
+      const post = await PostModel.findById(postId);
+
+      if (!post) {
+        return res.status(404).json({
+          message: "No such post",
+        });
+      }
+
+      if (!post.reactions) {
+        post.reactions = { like: [], heart: [], fire: [] };
+      }
+
+      if (!post.reactions[reaction].includes(userId)) {
+        post.reactions[reaction].push(userId);
+      }
+
+      await post.save();
+
+      return res.json(post);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when adding reaction.",
+        error: err.message,
+      });
+    }
+  },
+
+  removeReaction: async function (req, res) {
+    const postId = req.params.id;
+    const { userId, reaction } = req.body;
+  
+    try {
+      const post = await PostModel.findById(postId);
+  
+      if (!post) {
+        return res.status(404).json({
+          message: "No such post",
+        });
+      }
+  
+      if (post.reactions && post.reactions[reaction].includes(userId)) {
+        post.reactions[reaction] = post.reactions[reaction].filter(
+          (id) => id.toString() !== userId
+        );
+      }
+  
+      await post.save();
+  
+      return res.json(post);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Error when removing reaction.",
         error: err.message,
       });
     }

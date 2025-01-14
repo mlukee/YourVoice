@@ -33,4 +33,7 @@ router.get("/:id/comments", PostController.getComments);
 router.post("/:id/upvote", PostController.upvote);
 router.post("/:id/downvote", PostController.downvote);
 
+router.post("/:id/reaction", PostController.addReaction); 
+router.delete("/:id/reaction", PostController.removeReaction); 
+
 module.exports = router;

@@ -24,7 +24,11 @@ import {
   MessageSquare,
   ArrowUp,
   ArrowDown,
+  ThumbsUp, 
+  Heart, 
+  Flame
 } from 'lucide-react';
+
 
 import { UserContext } from '../userContext';
 import AddPostModal from '../components/AddPostModal';
@@ -32,6 +36,8 @@ import { Post } from '../interfaces/Post';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+
+type ReactionType = 'like' | 'heart' | 'fire';
 
 const Posts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -61,7 +67,7 @@ const Posts: React.FC = () => {
     } catch (error) {
       console.error('Napaka pri pridobivanju objav:', error);
     } finally {
-      setLoading(false); // Poskrbi, da se `setLoading` vedno pokliče
+      setLoading(false); // Ensure loading state is always updated
     }
   };
 
@@ -131,6 +137,44 @@ const Posts: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Napaka pri glasovanju',
+        status: 'error',
+      });
+      console.error(error);
+    }
+  };
+
+  const handleReaction = async (postId: string, reaction: ReactionType) => {
+    if (!user) {
+      toast({
+        title: 'Napaka: Uporabnik ni prijavljen.',
+        status: 'error',
+      });
+      return;
+    }
+
+    const post = posts.find((p) => p._id === postId);
+    if (!post) return;
+
+    const hasReacted = post.reactions[reaction].includes(user._id);
+
+    try {
+      const response = await fetch(`http://localhost:3000/post/${postId}/reaction`, {
+        method: hasReacted ? 'DELETE' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user._id, reaction }), // Include user ID and reaction in the request body
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Napaka pri upravljanju reakcije');
+      }
+
+      loadPosts();
+    } catch (error) {
+      toast({
+        title: 'Napaka pri upravljanju reakcije',
         status: 'error',
       });
       console.error(error);
@@ -256,6 +300,7 @@ const Posts: React.FC = () => {
                         post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'
                       }
                       size="sm"
+                      size="sm"
                     />
                     <Text fontWeight="bold">
                       {post.upvotes - post.downvotes}
@@ -267,6 +312,7 @@ const Posts: React.FC = () => {
                       colorScheme={
                         post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'
                       }
+                      size="sm"
                       size="sm"
                     />
                   </VStack>
@@ -340,7 +386,33 @@ const Posts: React.FC = () => {
                     </HStack>
                   </VStack>
                 </Flex>
-              </Box>
+                <HStack mt={4}>
+                <IconButton
+                  aria-label="Like"
+                  icon={<ThumbsUp />}
+                  onClick={() => handleReaction(post._id, 'like')}
+                  colorScheme={post.reactions?.like.includes(user?._id!) ? 'blue' : 'gray'}
+                  size="sm"
+                />
+                <Text>{post.reactions?.like.length || 0}</Text>
+                <IconButton
+                  aria-label="Heart"
+                  icon={<Heart />}
+                  onClick={() => handleReaction(post._id, 'heart')}
+                  colorScheme={post.reactions?.heart.includes(user?._id!) ? 'pink' : 'gray'}
+                  size="sm"
+                />
+                <Text>{post.reactions?.heart.length || 0}</Text>
+                <IconButton
+                  aria-label="Fire"
+                  icon={<Flame />}
+                  onClick={() => handleReaction(post._id, 'fire')}
+                  colorScheme={post.reactions?.fire.includes(user?._id!) ? 'orange' : 'gray'}
+                  size="sm"
+                />
+                <Text>{post.reactions?.fire.length || 0}</Text>
+              </HStack>
+            </Box>
             ))}
           </VStack>
         )}
