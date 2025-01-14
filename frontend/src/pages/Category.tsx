@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Box,
   Button,
   Heading,
   Image,
   Text,
   Tag,
-  Flex,
   Avatar,
   Container,
   VStack,

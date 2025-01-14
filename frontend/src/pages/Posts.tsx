@@ -300,7 +300,6 @@ const Posts: React.FC = () => {
                         post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'
                       }
                       size="sm"
-                      size="sm"
                     />
                     <Text fontWeight="bold">
                       {post.upvotes - post.downvotes}
@@ -312,7 +311,6 @@ const Posts: React.FC = () => {
                       colorScheme={
                         post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'
                       }
-                      size="sm"
                       size="sm"
                     />
                   </VStack>
@@ -384,34 +382,34 @@ const Posts: React.FC = () => {
                           </HStack>
                         )}
                     </HStack>
+                    <HStack mt={4}>
+                      <IconButton
+                        aria-label="Like"
+                        icon={<ThumbsUp />}
+                        onClick={() => handleReaction(post._id, 'like')}
+                        colorScheme={post.reactions?.like.includes(user?._id!) ? 'blue' : 'gray'}
+                        size="sm"
+                      />
+                      <Text>{post.reactions?.like.length || 0}</Text>
+                      <IconButton
+                        aria-label="Heart"
+                        icon={<Heart />}
+                        onClick={() => handleReaction(post._id, 'heart')}
+                        colorScheme={post.reactions?.heart.includes(user?._id!) ? 'pink' : 'gray'}
+                        size="sm"
+                      />
+                      <Text>{post.reactions?.heart.length || 0}</Text>
+                      <IconButton
+                        aria-label="Fire"
+                        icon={<Flame />}
+                        onClick={() => handleReaction(post._id, 'fire')}
+                        colorScheme={post.reactions?.fire.includes(user?._id!) ? 'orange' : 'gray'}
+                        size="sm"
+                      />
+                      <Text>{post.reactions?.fire.length || 0}</Text>
+                    </HStack>
                   </VStack>
                 </Flex>
-                <HStack mt={4}>
-                <IconButton
-                  aria-label="Like"
-                  icon={<ThumbsUp />}
-                  onClick={() => handleReaction(post._id, 'like')}
-                  colorScheme={post.reactions?.like.includes(user?._id!) ? 'blue' : 'gray'}
-                  size="sm"
-                />
-                <Text>{post.reactions?.like.length || 0}</Text>
-                <IconButton
-                  aria-label="Heart"
-                  icon={<Heart />}
-                  onClick={() => handleReaction(post._id, 'heart')}
-                  colorScheme={post.reactions?.heart.includes(user?._id!) ? 'pink' : 'gray'}
-                  size="sm"
-                />
-                <Text>{post.reactions?.heart.length || 0}</Text>
-                <IconButton
-                  aria-label="Fire"
-                  icon={<Flame />}
-                  onClick={() => handleReaction(post._id, 'fire')}
-                  colorScheme={post.reactions?.fire.includes(user?._id!) ? 'orange' : 'gray'}
-                  size="sm"
-                />
-                <Text>{post.reactions?.fire.length || 0}</Text>
-              </HStack>
             </Box>
             ))}
           </VStack>
