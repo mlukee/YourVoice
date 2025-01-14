@@ -1,19 +1,31 @@
 import React, { useEffect, useState, useContext } from 'react';
 import {
   Box,
+  Container,
   Heading,
-  Button,
-  Stack,
-  Text,
-  Spinner,
-  useDisclosure,
-  useToast,
-  Image,
   Input,
-  IconButton,
+  Button,
+  Spinner,
+  Text,
+  VStack,
   HStack,
+  Flex,
+  Image,
+  Badge,
+  IconButton,
+  useDisclosure,
+  Divider,
+  useColorModeValue,
+  useToast,
 } from '@chakra-ui/react';
-import { ArrowUpIcon, ArrowDownIcon } from '@chakra-ui/icons';
+import {
+  ArchiveIcon,
+  SquarePen,
+  MessageSquare,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
+
 import { UserContext } from '../userContext';
 import AddPostModal from '../components/AddPostModal';
 import { Post } from '../interfaces/Post';
@@ -29,6 +41,10 @@ const Posts: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { user } = useContext(UserContext);
   const toast = useToast();
+
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const hoverBgColor = useColorModeValue('gray.50', 'gray.700');
 
   dayjs.extend(relativeTime);
 
@@ -189,144 +205,157 @@ const Posts: React.FC = () => {
   };
 
   return (
-    <Box p={6} maxW="container.lg" mx="auto">
-      <Heading as="h2" size="xl" mb={6} textAlign="center">
-        Forum - Objave
-      </Heading>
-      <Input
-        placeholder="Poišči objavo..."
-        onChange={(e) => filterPosts(e.target.value)}
-        mb={4}
-      />
-      {user && (
-        <Button onClick={onOpen} colorScheme="blue" mb={6}>
-          Dodaj novo objavo
-        </Button>
-      )}
-      {loading ? (
-        <Spinner size="xl" />
-      ) : posts.length === 0 ? (
-        <Text fontSize="lg" color="gray.500" textAlign="center" mt={8}>
-          Trenutno ni nobenih objav.
-        </Text>
-      ) : (
-        <Stack spacing={6}>
-          {posts.map((post) => (
-            <Box
-              key={post._id}
-              p={5}
-              shadow="md"
-              borderWidth="1px"
-              borderRadius="lg"
-              _hover={{ bg: 'gray.50' }}
-            >
-              <Box display="flex" alignItems="center">
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  alignItems="center"
-                  mr={4}
-                >
-                  <HStack>
+    <Container maxW="container.xl" py={8}>
+      <VStack spacing={8} align="stretch">
+        <Heading as="h1" size="2xl" textAlign="center">
+          Forum - Objave
+        </Heading>
+
+        <HStack>
+          <Input
+            placeholder="Poišči objavo..."
+            onChange={(e) => filterPosts(e.target.value)}
+            flex={1}
+          />
+          {user && (
+            <Button onClick={onOpen} colorScheme="blue">
+              Dodaj novo objavo
+            </Button>
+          )}
+        </HStack>
+
+        {loading ? (
+          <Flex justify="center" align="center" minH="50vh">
+            <Spinner size="xl" />
+          </Flex>
+        ) : posts.length === 0 ? (
+          <Text fontSize="xl" color="gray.500" textAlign="center" mt={8}>
+            Trenutno ni nobenih objav.
+          </Text>
+        ) : (
+          <VStack spacing={6} align="stretch">
+            {posts.map((post) => (
+              <Box
+                key={post._id}
+                p={6}
+                shadow="md"
+                borderWidth="1px"
+                borderRadius="lg"
+                bg={bgColor}
+                borderColor={borderColor}
+                _hover={{ bg: hoverBgColor }}
+                transition="all 0.2s"
+              >
+                <Flex>
+                  <VStack mr={4} align="center" minW="60px">
                     <IconButton
                       aria-label="Upvote"
-                      icon={<ArrowUpIcon />}
+                      icon={<ArrowUp size={15} />}
                       onClick={() => handleUpvote(post._id)}
                       colorScheme={
                         post.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'
                       }
-                      size="50px"
+                      size="sm"
                     />
-                    <Text>{post.upvotes}</Text>
-                  </HStack>
-                  <HStack>
+                    <Text fontWeight="bold">
+                      {post.upvotes - post.downvotes}
+                    </Text>
                     <IconButton
                       aria-label="Downvote"
-                      icon={<ArrowDownIcon />}
+                      icon={<ArrowDown size={15} />}
                       onClick={() => handleDownvote(post._id)}
                       colorScheme={
                         post.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'
                       }
-                      size="50px"
+                      size="sm"
                     />
-                    <Text>{post.downvotes}</Text>
-                  </HStack>
-                </Box>
-                <Heading fontSize="xl">{post.title}</Heading>
+                  </VStack>
+                  <VStack align="start" flex={1} spacing={3}>
+                    <Heading fontSize="xl">{post.title}</Heading>
+                    {post.image && (
+                      <Image
+                        src={`data:image/jpeg;base64,${post.image}`}
+                        alt={post.title}
+                        borderRadius="md"
+                        maxH="200px"
+                        objectFit="cover"
+                      />
+                    )}
+                    <HStack wrap="wrap" spacing={2}>
+                      {getCategories(post.category).map((category: string) => (
+                        <Link
+                          to={`/category/${encodeURIComponent(category)}`}
+                          key={category}
+                        >
+                          <Badge colorScheme="blue">{category}</Badge>
+                        </Link>
+                      ))}
+                    </HStack>
+                    <Flex align="center" width="100%">
+                      <Image
+                        src={post?.userId?.avatar || '/avatars/hacker.png'}
+                        boxSize="30px"
+                        borderRadius="full"
+                        mr={2}
+                      />
+                      <Text fontSize="sm" color="gray.500">
+                        {post?.userId?.username || 'Neznan uporabnik'}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500" ml="auto">
+                        {dayjs(post.createdAt).fromNow()}
+                      </Text>
+                    </Flex>
+                    <Divider />
+                    <HStack justify="space-between" width="100%">
+                      <Link to={`/posts/${post._id}`}>
+                        <Button
+                          leftIcon={<MessageSquare />}
+                          colorScheme="teal"
+                          size="sm"
+                        >
+                          Preberi več
+                        </Button>
+                      </Link>
+                      {user &&
+                        post.userId &&
+                        (post.userId._id === user._id ||
+                          user.role === 'admin') && (
+                          <HStack>
+                            <IconButton
+                              aria-label="Edit post"
+                              icon={<SquarePen />}
+                              onClick={() => handleEditPost(post)}
+                              colorScheme="green"
+                              size="sm"
+                            />
+                            <IconButton
+                              aria-label="Archive post"
+                              icon={<ArchiveIcon />}
+                              onClick={() => handleArchivePost(post._id)}
+                              colorScheme="red"
+                              size="sm"
+                            />
+                          </HStack>
+                        )}
+                    </HStack>
+                  </VStack>
+                </Flex>
               </Box>
-              {/* Display image if it exists */}
-              {post.image && (
-                <Image
-                  src={`data:image/jpeg;base64,${post.image}`}
-                  alt={post.title}
-                  mt={4}
-                  mb={4}
-                  borderRadius="md"
-                />
-              )}
-              {/* Categories */}
-              <div className="d-flex gap-1">
-                {getCategories(post.category).map((category: string) => (
-                  <span key={category} className="badge text-bg-primary">
-                    {category}
-                  </span>
-                ))}
-              </div>
-              <Box display="flex" alignItems="center" mt={2}>
-                <Image
-                  src={post?.userId?.avatar || '/avatars/hacker.png'}
-                  boxSize="40px"
-                  borderRadius="full"
-                  mr={2} // Razmik desno med sliko in tekstom
-                />
-                <Text fontSize="sm" color="gray.500" lineHeight="40px">
-                  Avtor: {post?.userId?.username || 'Neznan uporabnik'}
-                </Text>
-              </Box>
-              <Link to={`/posts/${post._id}`}>
-                <Button colorScheme="teal" mt={4}>
-                  Preberi več
-                </Button>
-              </Link>
-              <div className="d-flex justify-content-between">
-                {user &&
-                  post.userId &&
-                  (post.userId._id === user._id || user.role === 'admin') && (
-                    <div className="d-flex align-items-center">
-                      <Button
-                        colorScheme="green"
-                        mr={3}
-                        onClick={() => handleEditPost(post)} // Edit post
-                      >
-                        Uredi
-                      </Button>
-                      <Button
-                        colorScheme="red"
-                        onClick={() => handleArchivePost(post._id)} // Archive post
-                      >
-                        Arhiviraj
-                      </Button>
-                    </div>
-                  )}
-                <Text mt={4} fontSize="sm" color="gray.500">
-                  Posted: {dayjs(post.createdAt).fromNow()}
-                </Text>
-              </div>
-            </Box>
-          ))}
-        </Stack>
-      )}
+            ))}
+          </VStack>
+        )}
+      </VStack>
+
       <AddPostModal
         isOpen={isOpen}
         onClose={() => {
           onClose();
-          setSelectedPost(null); // Reset selected post when modal closes
+          setSelectedPost(null);
         }}
         onPostAdded={handlePostAdded}
-        post={selectedPost} // Pass selected post to the modal
+        post={selectedPost}
       />
-    </Box>
+    </Container>
   );
 };
-
 export default Posts;

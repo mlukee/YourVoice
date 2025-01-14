@@ -8,34 +8,43 @@ import React, {
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Heading,
-  Text,
-  Spinner,
   Button,
+  Container,
   Divider,
   Flex,
+  Heading,
+  Image,
+  Text,
   VStack,
+  HStack,
+  IconButton,
+  Spinner,
+  useDisclosure,
   Modal,
   ModalOverlay,
   ModalContent,
   ModalHeader,
-  ModalCloseButton,
-  ModalBody,
   ModalFooter,
+  ModalBody,
+  ModalCloseButton,
   Textarea,
-  useDisclosure,
-  useToast,
-  Image,
   Input,
-  IconButton,
-  HStack,
+  Badge,
+  Avatar,
+  useToast,
 } from '@chakra-ui/react';
 import { UserContext } from '../userContext';
-import { PlusIcon } from 'lucide-react';
-import { ArrowUpIcon, ArrowDownIcon } from '@chakra-ui/icons';
+import {
+  PlusIcon,
+  ArrowDownLeft,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 
 interface User {
   username: string;
+  avatar: string;
   _id: string;
 }
 
@@ -74,7 +83,11 @@ const PostDetail: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const { isOpen: isImageOpen, onOpen: onImageOpen, onClose: onImageClose } = useDisclosure();
+  const {
+    isOpen: isImageOpen,
+    onOpen: onImageOpen,
+    onClose: onImageClose,
+  } = useDisclosure();
 
   // Ustvarite ref za textarea
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -88,9 +101,11 @@ const PostDetail: React.FC = () => {
       }
       const data = await response.json();
       setPost(data);
-  
+
       // Fetch sorted comments
-      const commentsResponse = await fetch(`http://localhost:3000/post/${id}/comments`);
+      const commentsResponse = await fetch(
+        `http://localhost:3000/post/${id}/comments`
+      );
       if (!commentsResponse.ok) {
         throw new Error('Network response was not ok');
       }
@@ -165,21 +180,24 @@ const PostDetail: React.FC = () => {
       });
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://localhost:3000/post/${id}/comment/${commentId}/upvote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user._id }), 
-      });
-  
+      const response = await fetch(
+        `http://localhost:3000/post/${id}/comment/${commentId}/upvote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id }),
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-  
+
       fetchPost();
     } catch (error) {
       toast({
@@ -189,7 +207,7 @@ const PostDetail: React.FC = () => {
       console.error(error);
     }
   };
-  
+
   const handleCommentDownvote = async (commentId: string) => {
     if (!user) {
       toast({
@@ -198,21 +216,24 @@ const PostDetail: React.FC = () => {
       });
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://localhost:3000/post/${id}/comment/${commentId}/downvote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user._id }), 
-      });
-  
+      const response = await fetch(
+        `http://localhost:3000/post/${id}/comment/${commentId}/downvote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id }),
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-  
+
       fetchPost();
     } catch (error) {
       toast({
@@ -278,188 +299,212 @@ const PostDetail: React.FC = () => {
   };
 
   return (
-    <Box
-      p={8}
-      maxW="container.md"
-      mx="auto"
-      borderWidth="1px"
-      borderRadius="lg"
-      shadow="lg"
-    >
-      <Button onClick={() => navigate('/posts')} colorScheme="teal" mb={6}>
-        Nazaj na objave
+    <Container maxW="container.xl" py={8}>
+      <Button
+        leftIcon={<ArrowDownLeft />}
+        onClick={() => navigate('/posts')}
+        colorScheme="teal"
+        mb={6}
+      >
+        Back to Posts
       </Button>
       {loading ? (
-        <Spinner size="xl" />
+        <Flex justify="center" align="center" minH="50vh">
+          <Spinner size="xl" color="teal.500" />
+        </Flex>
       ) : post ? (
-        <>
-          <Heading as="h2" size="xl" mb={4} textAlign="center" color="teal.600">
-            {post.title}
-          </Heading>
-          <Divider mb={4} />
-          <Flex justify="space-between" color="gray.500" fontSize="sm" mb={6}>
-            <Text>
-              Kategorija: <strong>{post.category}</strong>
-            </Text>
-            <Text>
-              Datum: <b>{new Date(post.createdAt).toLocaleDateString()}</b>
-            </Text>
-          </Flex>
-          <Text color="gray.500" fontSize="sm" mb={4}>
-            Avtor:{' '}
-            <strong>{post.userId?.username || 'Neznan uporabnik'}</strong>
-          </Text>
-          {/* Display image if it exists */}
-          {post.image && (
-            <Flex justifyContent="center" alignItems="center">
-              <Image
-                src={`data:image/jpeg;base64,${post.image}`}
-                alt={post.title}
-                mt={4}
-                mb={4}
-                borderRadius="md"
-                cursor="pointer"
-                onClick={() => handleImageClick(post.image!)}
-              />
-            </Flex>
-          )}
-          <Text fontSize="md" lineHeight="tall" mt={4} color="gray.700">
-            {post.content}
-          </Text>
-          <Divider my={6} />
-          <div className="d-flex flex-row align-items-center justify-content-between">
-            <Heading as="h3" size="md" mb={4}>
-              Komentarji
+        <Box
+          borderWidth="1px"
+          borderRadius="lg"
+          overflow="hidden"
+          boxShadow="lg"
+          bg="white"
+        >
+          <Box p={6}>
+            <Heading as="h2" size="xl" mb={4} color="teal.600">
+              {post.title}
             </Heading>
-            <Button mb={4} colorScheme="teal" onClick={onOpen}>
-              <PlusIcon size={20} className="mr-2" />
-              Dodaj komentar
-            </Button>
-          </div>
-
-          {comments.length > 0 ? (
-            <VStack spacing={4} align="start">
-              {comments.map((comment) => (
-                <Box
-                  key={comment._id}
-                  p={4}
-                  borderWidth="1px"
+            <Flex justify="space-between" align="center" mb={6}>
+              <HStack spacing={4}>
+                <Badge colorScheme="teal">{post.category}</Badge>
+                <Text color="gray.500" fontSize="sm">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </Text>
+              </HStack>
+              <HStack>
+                <Avatar
+                  size="sm"
+                  name={post.userId?.username || 'Unknown User'}
+                  src={post?.userId?.avatar || '/avatars/hacker.png'}
+                />
+                <Text color="gray.500" fontSize="sm">
+                  {post.userId?.username || 'Unknown User'}
+                </Text>
+              </HStack>
+            </Flex>
+            {post.image && (
+              <Box mb={6}>
+                <Image
+                  src={`data:image/jpeg;base64,${post.image}`}
+                  alt={post.title}
                   borderRadius="md"
-                  w="full"
-                >
-                  <Text fontSize="sm" color="gray.500">
-                    {comment.userId.username} -{' '}
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </Text>
-                  {/* Display comment image if it exists */}
-                  {comment.image && (
-                    <Flex justifyContent="center" alignItems="center">
+                  cursor="pointer"
+                  onClick={() => handleImageClick(post.image!)}
+                  mx="auto"
+                />
+              </Box>
+            )}
+            <Text fontSize="md" lineHeight="tall" color="gray.700">
+              {post.content}
+            </Text>
+          </Box>
+          <Divider />
+          <Box p={6}>
+            <Flex justify="space-between" align="center" mb={6}>
+              <Heading as="h3" size="md">
+                Comments
+              </Heading>
+              <Button
+                leftIcon={<PlusIcon />}
+                colorScheme="teal"
+                onClick={onOpen}
+              >
+                Dodaj komentar
+              </Button>
+            </Flex>
+            {comments.length > 0 ? (
+              <VStack spacing={4} align="stretch">
+                {comments.map((comment) => (
+                  <Box
+                    key={comment._id}
+                    p={4}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    bg="gray.50"
+                  >
+                    <Flex justify="space-between" align="center" mb={2}>
+                      <HStack>
+                        <Avatar size="sm" name={comment.userId.username} />
+                        <Text fontWeight="bold">{comment.userId.username}</Text>
+                      </HStack>
+                      <Text fontSize="sm" color="gray.500">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </Text>
+                    </Flex>
+                    {comment.image && (
                       <Image
                         src={`data:image/jpeg;base64,${comment.image}`}
                         alt="Comment Image"
-                        mt={4}
-                        mb={4}
                         borderRadius="md"
-                        boxSize="150px"
+                        maxH="200px"
                         cursor="pointer"
                         onClick={() => handleImageClick(comment.image!)}
+                        my={2}
                       />
+                    )}
+                    <Text mb={2}>{comment.content}</Text>
+                    <Flex justify="space-between" align="center">
+                      <HStack>
+                        <IconButton
+                          aria-label="Upvote"
+                          icon={<ArrowUp />}
+                          onClick={() => handleCommentUpvote(comment._id)}
+                          colorScheme={
+                            comment.upvotedBy?.includes(user?._id!)
+                              ? 'green'
+                              : 'gray'
+                          }
+                          size="sm"
+                        />
+                        <Text>{comment.upvotes}</Text>
+                        <IconButton
+                          aria-label="Downvote"
+                          icon={<ArrowDown />}
+                          onClick={() => handleCommentDownvote(comment._id)}
+                          colorScheme={
+                            comment.downvotedBy?.includes(user?._id!)
+                              ? 'red'
+                              : 'gray'
+                          }
+                          size="sm"
+                        />
+                        <Text>{comment.downvotes}</Text>
+                      </HStack>
+                      {(user?._id === comment.userId._id ||
+                        user?._id === post.userId?._id ||
+                        user?.role === 'admin') && (
+                        <IconButton
+                          aria-label="Delete comment"
+                          icon={<Trash2 />}
+                          colorScheme="red"
+                          size="sm"
+                          onClick={() => handleCommentDelete(comment._id)}
+                        />
+                      )}
                     </Flex>
-                  )}
-                  <Text>{comment.content}</Text>
-                  <HStack>
-                    <IconButton
-                      aria-label="Upvote"
-                      icon={<ArrowUpIcon />}
-                      onClick={() => handleCommentUpvote(comment._id)}
-                      colorScheme={comment.upvotedBy?.includes(user?._id!) ? 'green' : 'gray'}
-                      size="sm"
-                    />
-                    <Text>{comment.upvotes}</Text>
-                    <IconButton
-                      aria-label="Downvote"
-                      icon={<ArrowDownIcon />}
-                      onClick={() => handleCommentDownvote(comment._id)}
-                      colorScheme={comment.downvotedBy?.includes(user?._id!) ? 'red' : 'gray'}
-                      size="sm"
-                    />
-                    <Text>{comment.downvotes}</Text>
-                  </HStack>
-                  {(user?._id === comment.userId._id ||
-                    user?._id === post.userId?._id || user?.role === "admin") && (
-                    <Button
-                      colorScheme="red"
-                      size="sm"
-                      mt={2}
-                      onClick={() => handleCommentDelete(comment._id)}
-                    >
-                      Izbriši
-                    </Button>
-                  )}
-                </Box>
-              ))}
-            </VStack>
-          ) : (
-            <Text color="gray.500">
-              Ni komentarjev. Bodite prvi, ki komentirate!
-            </Text>
-          )}
-
-          <Modal isOpen={isImageOpen} onClose={onImageClose} size="xl">
-            <ModalOverlay />
-            <ModalContent>
-              <ModalCloseButton />
-              <ModalBody>
-                {selectedImage && (
-                  <Image
-                    src={`data:image/jpeg;base64,${selectedImage}`}
-                    alt="Selected Image"
-                    borderRadius="md"
-                    width="100%"
-                  />
-                )}
-              </ModalBody>
-            </ModalContent>
-          </Modal>
-
-          <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            initialFocusRef={textareaRef}
-          >
-            <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>Dodaj komentar</ModalHeader>
-              <ModalCloseButton />
-              <ModalBody>
-                <Textarea
-                  ref={textareaRef} // Povezava referenc
-                  placeholder="Vnesite svoj komentar..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  mt={4}
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button colorScheme="teal" onClick={handleCommentSubmit}>
-                  Objavi
-                </Button>
-                <Button onClick={onClose} ml={3}>
-                  Prekliči
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        </>
+                  </Box>
+                ))}
+              </VStack>
+            ) : (
+              <Text color="gray.500">
+                Ni komentarjev. Bodite prvi, ki komentirate!
+              </Text>
+            )}
+          </Box>
+        </Box>
       ) : (
-        <Text color="red.500">Objava ni najdena.</Text>
+        <Box textAlign="center" p={8}>
+          <Heading as="h2" size="xl" color="red.500">
+            Objava ni najdena
+          </Heading>
+        </Box>
       )}
-    </Box>
+
+      <Modal isOpen={isImageOpen} onClose={onImageClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedImage && (
+              <Image
+                src={`data:image/jpeg;base64,${selectedImage}`}
+                alt="Selected Image"
+                borderRadius="md"
+                width="100%"
+              />
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isOpen} onClose={onClose} initialFocusRef={textareaRef}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Add Comment</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Textarea
+              ref={textareaRef}
+              placeholder="Enter your comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              mt={4}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="teal" mr={3} onClick={handleCommentSubmit}>
+              Post
+            </Button>
+            <Button onClick={onClose}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Container>
   );
 };
 

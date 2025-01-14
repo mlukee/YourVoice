@@ -10,6 +10,7 @@ import { UserContext } from './userContext';
 import Home from './pages/Home'; // Potrdite pravilno pot
 import Posts from './pages/Posts'; // Dodajte direktni import za Posts
 import PostDetail from './components/PostDetail';
+import Category from './pages/Category';
 
 function App() {
   const [user, setUser] = useState<User | null>(
@@ -47,6 +48,7 @@ function App() {
             {/* Javni Routes - stran Objave vključena za vse */}
             <Route path="/posts" element={<Posts />} />
             <Route path="/posts/:id" element={<PostDetail />} />
+            <Route path="/category/:category" element={<Category />} />
             {publicRoutes
               .filter((route) => route.to !== '/' && route.to !== '/posts') // Home in Objave izvzeti
               .map((route) => (
