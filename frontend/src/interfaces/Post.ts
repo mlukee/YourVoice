@@ -26,4 +26,9 @@ export interface Post {
   image?: string
   archived: boolean;
   createdAt: string;
+  reactions: {
+    like: string[];
+    heart: string[];
+    fire: string[];
+  };
 }
