@@ -1,7 +1,14 @@
 {
   "name": "YourVoice",
   "version": "0.0.0",
+  "type": "module",
+  "jest": {
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  },
   "scripts": {
+    "test": "jest",
     "start": "node ./bin/www",
     "devstart": "nodemon ./bin/www"
   },
@@ -20,5 +27,15 @@
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.7",
     "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
+    "babel-jest": "^29.7.0",
+    "chai": "^5.1.2",
+    "jest": "^29.7.0",
+    "mocha": "^11.0.1",
+    "sinon": "^7.5.0",
+    "sinon-mongoose": "^2.3.0"
   }
 }
