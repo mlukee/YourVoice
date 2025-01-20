@@ -148,7 +148,9 @@ export default function UserPosts() {
                     fontSize="xl"
                     className="text-truncate"
                   >
-                    {post.title}
+                    {post.title.length > 25
+                      ? `${post.title.substring(0, 25)}...`
+                      : post.title}
                   </Text>
                 </Link>
                 <Text className="text-muted">

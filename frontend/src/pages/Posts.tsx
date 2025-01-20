@@ -24,11 +24,10 @@ import {
   MessageSquare,
   ArrowUp,
   ArrowDown,
-  ThumbsUp, 
-  Heart, 
-  Flame
+  ThumbsUp,
+  Heart,
+  Flame,
 } from 'lucide-react';
-
 
 import { UserContext } from '../userContext';
 import AddPostModal from '../components/AddPostModal';
@@ -143,7 +142,12 @@ const Posts: React.FC = () => {
     }
   };
 
-  const handleReaction = async (postId: string, reaction: ReactionType) => {
+  const handleReaction = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    postId: string,
+    reaction: ReactionType
+  ) => {
+    event.preventDefault();
     if (!user) {
       toast({
         title: 'Napaka: Uporabnik ni prijavljen.',
@@ -158,13 +162,16 @@ const Posts: React.FC = () => {
     const hasReacted = post.reactions[reaction].includes(user._id);
 
     try {
-      const response = await fetch(`http://localhost:3000/post/${postId}/reaction`, {
-        method: hasReacted ? 'DELETE' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user._id, reaction }), // Include user ID and reaction in the request body
-      });
+      const response = await fetch(
+        `http://localhost:3000/post/${postId}/reaction`,
+        {
+          method: hasReacted ? 'DELETE' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id, reaction }), // Include user ID and reaction in the request body
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -386,31 +393,44 @@ const Posts: React.FC = () => {
                       <IconButton
                         aria-label="Like"
                         icon={<ThumbsUp />}
-                        onClick={() => handleReaction(post._id, 'like')}
-                        colorScheme={post.reactions?.like.includes(user?._id!) ? 'blue' : 'gray'}
+                        onClick={(e) => handleReaction(e, post._id, 'like')}
+                        colorScheme={
+                          post.reactions?.like.includes(user?._id!)
+                            ? 'blue'
+                            : 'gray'
+                        }
                         size="sm"
                       />
                       <Text>{post.reactions?.like.length || 0}</Text>
                       <IconButton
                         aria-label="Heart"
                         icon={<Heart />}
-                        onClick={() => handleReaction(post._id, 'heart')}
-                        colorScheme={post.reactions?.heart.includes(user?._id!) ? 'pink' : 'gray'}
+                        onClick={(e) => handleReaction(e, post._id, 'heart')}
+                        colorScheme={
+                          post.reactions?.heart.includes(user?._id!)
+                            ? 'pink'
+                            : 'gray'
+                        }
                         size="sm"
                       />
                       <Text>{post.reactions?.heart.length || 0}</Text>
                       <IconButton
+                        type="submit"
                         aria-label="Fire"
                         icon={<Flame />}
-                        onClick={() => handleReaction(post._id, 'fire')}
-                        colorScheme={post.reactions?.fire.includes(user?._id!) ? 'orange' : 'gray'}
+                        onClick={(e) => handleReaction(e, post._id, 'fire')}
+                        colorScheme={
+                          post.reactions?.fire.includes(user?._id!)
+                            ? 'orange'
+                            : 'gray'
+                        }
                         size="sm"
                       />
                       <Text>{post.reactions?.fire.length || 0}</Text>
                     </HStack>
                   </VStack>
                 </Flex>
-            </Box>
+              </Box>
             ))}
           </VStack>
         )}

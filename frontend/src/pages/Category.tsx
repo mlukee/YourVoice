@@ -88,7 +88,7 @@ export default function Category() {
   return (
     <Container maxW="4xl" py={8}>
       <Heading as="h1" size="2xl" mb={8} textAlign="center">
-        Posts in Category: {category}
+        Objave v kategoriji: {category}
       </Heading>
 
       {posts.length > 0 ? (

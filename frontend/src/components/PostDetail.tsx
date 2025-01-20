@@ -384,7 +384,11 @@ const PostDetail: React.FC = () => {
                   >
                     <Flex justify="space-between" align="center" mb={2}>
                       <HStack>
-                        <Avatar size="sm" name={comment.userId.username} />
+                        <Avatar
+                          size="sm"
+                          name={comment.userId.username}
+                          src={comment?.userId?.avatar || '/avatars/hacker.png'}
+                        />
                         <Text fontWeight="bold">{comment.userId.username}</Text>
                       </HStack>
                       <Text fontSize="sm" color="gray.500">

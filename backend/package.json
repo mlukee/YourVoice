@@ -1,7 +1,7 @@
 {
   "name": "YourVoice",
   "version": "0.0.0",
-  "type": "module",
+  "type": "commonjs",
   "jest": {
     "transform": {
       "^.+\\.js$": "babel-jest"
