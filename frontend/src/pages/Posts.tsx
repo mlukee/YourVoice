@@ -78,7 +78,7 @@ const Posts: React.FC = () => {
       });
       return;
     }
-
+  
     try {
       const response = await fetch(
         `http://localhost:3000/post/${postId}/upvote`,
@@ -90,13 +90,18 @@ const Posts: React.FC = () => {
           body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
         }
       );
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-
-      loadPosts();
+  
+      const updatedPost = await response.json();
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post._id === postId ? updatedPost : post
+        )
+      );
     } catch (error) {
       toast({
         title: 'Napaka pri glasovanju',
@@ -114,7 +119,7 @@ const Posts: React.FC = () => {
       });
       return;
     }
-
+  
     try {
       const response = await fetch(
         `http://localhost:3000/post/${postId}/downvote`,
@@ -126,13 +131,18 @@ const Posts: React.FC = () => {
           body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
         }
       );
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri glasovanju');
       }
-
-      loadPosts();
+  
+      const updatedPost = await response.json();
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post._id === postId ? updatedPost : post
+        )
+      );
     } catch (error) {
       toast({
         title: 'Napaka pri glasovanju',
@@ -141,7 +151,7 @@ const Posts: React.FC = () => {
       console.error(error);
     }
   };
-
+  
   const handleReaction = async (
     event: React.MouseEvent<HTMLButtonElement>,
     postId: string,
@@ -155,12 +165,12 @@ const Posts: React.FC = () => {
       });
       return;
     }
-
+  
     const post = posts.find((p) => p._id === postId);
     if (!post) return;
-
+  
     const hasReacted = post.reactions[reaction].includes(user._id);
-
+  
     try {
       const response = await fetch(
         `http://localhost:3000/post/${postId}/reaction`,
@@ -172,13 +182,18 @@ const Posts: React.FC = () => {
           body: JSON.stringify({ userId: user._id, reaction }), // Include user ID and reaction in the request body
         }
       );
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Napaka pri upravljanju reakcije');
       }
-
-      loadPosts();
+  
+      const updatedPost = await response.json();
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post._id === postId ? updatedPost : post
+        )
+      );
     } catch (error) {
       toast({
         title: 'Napaka pri upravljanju reakcije',
