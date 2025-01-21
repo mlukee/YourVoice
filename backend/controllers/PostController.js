@@ -341,33 +341,38 @@ module.exports = {
   upvote: async function (req, res) {
     const postId = req.params.id;
     const userId = req.body.userId;
-
+  
     try {
-      const post = await PostModel.findById(postId);
-
+      const post = await PostModel.findById(postId).populate('userId'); // Populate the userId field
+  
       if (!post) {
         return res.status(404).json({
           message: "No such post",
         });
       }
-
+  
+      // Access the post's userId
+      const postOwnerId = post.userId._id; // Assuming userId is an object reference
+      console.log(`Post Owner ID: ${postOwnerId}`); // Debugging log
+  
       if (post.upvotedBy.includes(userId)) {
         return res.status(400).json({
           message: "User has already upvoted this post",
         });
       }
-
+  
       if (post.downvotedBy.includes(userId)) {
         post.downvotes -= 1;
         post.downvotedBy.pull(userId);
       }
-
+  
       post.upvotes += 1;
       post.upvotedBy.push(userId);
-
+  
       await post.save();
-
-      return res.json(post);
+      const populatedPost = await PostModel.findById(postId).populate('userId');
+  
+      return res.json(populatedPost);
     } catch (err) {
       return res.status(500).json({
         message: "Error when upvoting post.",
@@ -375,44 +380,46 @@ module.exports = {
       });
     }
   },
-
+  
   downvote: async function (req, res) {
     const postId = req.params.id;
     const userId = req.body.userId;
 
     try {
-      const post = await PostModel.findById(postId);
+        const post = await PostModel.findById(postId);
 
-      if (!post) {
-        return res.status(404).json({
-          message: "No such post",
-        });
-      }
+        if (!post) {
+            return res.status(404).json({
+                message: "No such post",
+            });
+        }
 
-      if (post.downvotedBy.includes(userId)) {
-        return res.status(400).json({
-          message: "User has already downvoted this post",
-        });
-      }
+        if (post.downvotedBy.includes(userId)) {
+            return res.status(400).json({
+                message: "User has already downvoted this post",
+            });
+        }
 
-      if (post.upvotedBy.includes(userId)) {
-        post.upvotes -= 1;
-        post.upvotedBy.pull(userId);
-      }
+        if (post.upvotedBy.includes(userId)) {
+            post.upvotes -= 1;
+            post.upvotedBy.pull(userId);
+        }
 
-      post.downvotes += 1;
-      post.downvotedBy.push(userId);
+        post.downvotes += 1;
+        post.downvotedBy.push(userId);
 
-      await post.save();
+        await post.save();
+        const populatedPost = await PostModel.findById(postId).populate('userId');
 
-      return res.json(post);
+        return res.json(populatedPost);
     } catch (err) {
-      return res.status(500).json({
-        message: "Error when downvoting post.",
-        error: err.message,
-      });
+        return res.status(500).json({
+            message: "Error when downvoting post.",
+            error: err.message,
+        });
     }
-  },
+},
+
 
   upvoteComment: async function (req, res) {
     const commentId = req.params.commentId;
@@ -554,61 +561,101 @@ module.exports = {
     const postId = req.params.id;
     const { userId, reaction } = req.body;
 
+    if (!userId || !reaction) {
+        return res.status(400).json({
+            message: "User ID and reaction type are required.",
+        });
+    }
+
     try {
+        const post = await PostModel.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({
+                message: "No such post",
+            });
+        }
+
+        if (!post.reactions) {
+            post.reactions = { like: [], heart: [], fire: [] };
+        }
+
+        if (!post.reactions[reaction]) {
+            return res.status(400).json({
+                message: `Invalid reaction type: ${reaction}`,
+            });
+        }
+
+        if (!post.reactions[reaction].includes(userId)) {
+            post.reactions[reaction].push(userId);
+        }
+
+        await post.save();
+
+        const populatedPost = await PostModel.findById(postId).populate('userId');
+        if (!populatedPost) {
+            return res.status(500).json({
+                message: "Error populating post data after adding reaction.",
+            });
+        }
+
+        return res.json(populatedPost);
+    } catch (err) {
+        return res.status(500).json({
+            message: "Error when adding reaction.",
+            error: err.message,
+        });
+    }
+},
+
+
+removeReaction: async function (req, res) {
+  const postId = req.params.id;
+  const { userId, reaction } = req.body;
+
+  if (!userId || !reaction) {
+      return res.status(400).json({
+          message: "User ID and reaction type are required.",
+      });
+  }
+
+  try {
       const post = await PostModel.findById(postId);
 
       if (!post) {
-        return res.status(404).json({
-          message: "No such post",
-        });
+          return res.status(404).json({
+              message: "No such post",
+          });
       }
 
-      if (!post.reactions) {
-        post.reactions = { like: [], heart: [], fire: [] };
+      if (!post.reactions || !post.reactions[reaction]) {
+          return res.status(400).json({
+              message: `Invalid reaction type: ${reaction}`,
+          });
       }
 
-      if (!post.reactions[reaction].includes(userId)) {
-        post.reactions[reaction].push(userId);
+      if (post.reactions[reaction].includes(userId)) {
+          post.reactions[reaction] = post.reactions[reaction].filter(
+              (id) => id.toString() !== userId
+          );
       }
 
       await post.save();
 
-      return res.json(post);
-    } catch (err) {
-      return res.status(500).json({
-        message: "Error when adding reaction.",
-        error: err.message,
-      });
-    }
-  },
+      const populatedPost = await PostModel.findById(postId).populate('userId');
+      if (!populatedPost) {
+          return res.status(500).json({
+              message: "Error populating post data after removing reaction.",
+          });
+      }
 
-  removeReaction: async function (req, res) {
-    const postId = req.params.id;
-    const { userId, reaction } = req.body;
-  
-    try {
-      const post = await PostModel.findById(postId);
-  
-      if (!post) {
-        return res.status(404).json({
-          message: "No such post",
-        });
-      }
-  
-      if (post.reactions && post.reactions[reaction].includes(userId)) {
-        post.reactions[reaction] = post.reactions[reaction].filter(
-          (id) => id.toString() !== userId
-        );
-      }
-  
-      await post.save();
-  
-      return res.json(post);
-    } catch (err) {
+      return res.json(populatedPost);
+  } catch (err) {
       return res.status(500).json({
-        message: "Error when removing reaction.",
-        error: err.message,
+          message: "Error when removing reaction.",
+          error: err.message,
       });
-    }
-  },
+  }
+},
+
 };

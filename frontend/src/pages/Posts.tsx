@@ -70,73 +70,34 @@ const Posts: React.FC = () => {
     }
   };
 
-  const handleUpvote = async (postId: string) => {
-    if (!user) {
-      toast({
-        title: 'Napaka: Uporabnik ni prijavljen.',
-        status: 'error',
-      });
-      return;
+const handleUpvote = async (postId: string) => {
+  try {
+    const response = await fetch(`http://localhost:3000/post/${postId}/upvote`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
     }
+    const updatedPost = await response.json();
+    console.log('Updated Post:', updatedPost); // Verify the data
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post._id === postId ? updatedPost : post
+      )
+    );
+  } catch (error) {
+    console.error('Failed to upvote post:', error);
+  }
+};
   
-    try {
-      const response = await fetch(
-        `http://localhost:3000/post/${postId}/upvote`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
-        }
-      );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Napaka pri glasovanju');
-      }
-  
-      const updatedPost = await response.json();
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post._id === postId ? updatedPost : post
-        )
-      );
-    } catch (error) {
-      toast({
-        title: 'Napaka pri glasovanju',
-        status: 'error',
-      });
-      console.error(error);
-    }
-  };
-
   const handleDownvote = async (postId: string) => {
-    if (!user) {
-      toast({
-        title: 'Napaka: Uporabnik ni prijavljen.',
-        status: 'error',
-      });
-      return;
-    }
-  
     try {
-      const response = await fetch(
-        `http://localhost:3000/post/${postId}/downvote`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: user._id }), // Include user ID in the request body
-        }
-      );
-  
+      const response = await fetch(`http://localhost:3000/post/${postId}/downvote`, {
+        method: 'POST',
+      });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Napaka pri glasovanju');
+        throw new Error('Network response was not ok');
       }
-  
       const updatedPost = await response.json();
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -144,11 +105,7 @@ const Posts: React.FC = () => {
         )
       );
     } catch (error) {
-      toast({
-        title: 'Napaka pri glasovanju',
-        status: 'error',
-      });
-      console.error(error);
+      console.error('Failed to downvote post:', error);
     }
   };
   
